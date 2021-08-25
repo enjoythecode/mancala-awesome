@@ -1,8 +1,3 @@
-from enum import Enum
-
-class Ruleset(Enum):
-    DEFAULT = 0
-
 class Mancala():
     def __init__(self):
         self.pits = [
