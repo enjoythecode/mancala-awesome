@@ -1,15 +1,47 @@
+from copy import deepcopy as dcopy
+
 class Mancala():
-    def __init__(self):
-        self.pits = [
-            [4] * 6,
-            [4] * 6
-        ]
-        self.banks = [0, 0]
-        self.curr_player = 0
+    def __init__(self, pits = None, banks = None, player = 0):
+        if not pits:
+            self.pits = [
+                [4] * 6,
+                [4] * 6
+            ]
+        else:
+            self.pits = pits
+        
+        if not banks:
+            self.banks = [0, 0]
+        else:
+            self.banks = banks
+        self.curr_player = player
 
     @property
     def next_player(self):
         return (self.curr_player + 1) % 2
+
+    @property
+    def playerJustMoved(self):
+        '''
+        Integration w/ MCTS script from mcts.ai
+        '''
+        return self.curr_player + 1
+
+    def clone(self):
+        copy = Mancala(dcopy(self.pits), dcopy(self.banks), dcopy(self.curr_player))
+        return copy
+
+    def check_game_end(self):
+        '''
+        Integration w/ MCTS script from mcts.ai
+        '''
+        _, player = self.is_game_over()
+        if player == -1: # tie
+            return 0.5
+        elif player == self.curr_player:
+            return 0.0
+        else:
+            return 1.0
 
     def is_game_over(self):
         '''
@@ -21,7 +53,7 @@ class Mancala():
             return False, None
         else:
             scores = self.banks
-            scores[self.next_player] += sum(self.pits[self.next_player]) # other player gets all the seeds in their pits
+            scores[self.curr_player] += sum(self.pits[self.next_player]) # curr player gets all the seeds in their opponents pits
             winner = -1 # default to a tie
             if scores[0] > scores[1]:
                 winner = 0
@@ -36,7 +68,7 @@ class Mancala():
         
         seeds = self.pits[self.curr_player][pit_no]
         if seeds == 0:
-            print("empty pit")
+            #print("empty pit")
             return
 
         self.pits[self.curr_player][pit_no] = 0
@@ -79,12 +111,49 @@ class Mancala():
         string += "\n"
 
         return string
+
+    def get_possible_moves(self):
+        moves = []
+        for i in range(6):
+            if self.pits[self.curr_player][i] > 0:
+                moves.append(i)
+        return moves
         
+    @classmethod
+    def PvP(self):
+        m = Mancala()
+
+        while not m.is_game_over()[0]:
+            print(m)
+            inp = int(input("What is the next move? "))
+            m.make_move(inp)
+        
+        print(m.is_game_over()[1] + "wins")
+
+    @classmethod
+    def EvE(self):
+        import mcts_bot
+        m = Mancala()
+        p1 = mcts_bot.MancalaPlayer(1)
+        p2 = mcts_bot.MancalaPlayer(2)
+        c = 1
+        ps = [p2, p1]
+        while not m.is_game_over()[0]:
+            move = ps[c%2].next_move(m)
+            m.make_move(move)
+            print(move)
+            print(m)
+    
+        print(m.is_game_over())
+            
 m = Mancala()
 
-m.make_move(5)
-m.make_move(1)
-m.make_move(0)
-m.make_move(1)
+#m.make_move(5)
+#m.make_move(1)
+#m.make_move(0)
+#m.make_move(1)
+#print(m)
 
-print(m)
+#Mancala.PvP()
+
+m.EvE()
